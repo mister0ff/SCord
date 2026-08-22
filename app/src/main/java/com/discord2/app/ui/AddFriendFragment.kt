@@ -20,28 +20,32 @@ class AddFriendFragment : Fragment(R.layout.fragment_add_friend) {
         super.onViewCreated(view, savedInstanceState)
 
         val input = view.findViewById<EditText>(R.id.usernameSearchInput)
+        input.hint = "@handle do seu amigo (ex: user2282)"
         val button = view.findViewById<Button>(R.id.sendRequestButton)
 
         button.setOnClickListener {
-            val targetUsername = input.text.toString().trim()
-            if (targetUsername.isEmpty()) {
-                Toast.makeText(requireContext(), "Digite um nome de usuário", Toast.LENGTH_SHORT).show()
+            var targetHandle = input.text.toString().trim().lowercase()
+            if (targetHandle.startsWith("@")) {
+                targetHandle = targetHandle.substring(1)
+            }
+            if (targetHandle.isEmpty()) {
+                Toast.makeText(requireContext(), "Digite o @handle do seu amigo", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            sendFriendRequest(targetUsername)
+            sendFriendRequest(targetHandle)
         }
     }
 
-    private fun sendFriendRequest(targetUsername: String) {
+    private fun sendFriendRequest(targetHandle: String) {
         val myUid = auth.currentUser?.uid ?: return
 
         db.collection("users")
-            .whereEqualTo("usernameLower", targetUsername.lowercase())
+            .whereEqualTo("handle", targetHandle)
             .limit(1)
             .get()
             .addOnSuccessListener { snapshot ->
                 if (snapshot.isEmpty) {
-                    Toast.makeText(requireContext(), "Usuário não encontrado", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "Usuário @$targetHandle não encontrado", Toast.LENGTH_SHORT).show()
                     return@addOnSuccessListener
                 }
 
@@ -55,10 +59,12 @@ class AddFriendFragment : Fragment(R.layout.fragment_add_friend) {
 
                 db.collection("users").document(myUid).get()
                     .addOnSuccessListener { myDoc ->
-                        val myUsername = myDoc.getString("username") ?: "Usuário"
+                        val myNick = myDoc.getString("nick") ?: "Usuário"
+                        val myHandle = myDoc.getString("handle") ?: ""
                         val request = FriendRequest(
                             fromUid = myUid,
-                            fromUsername = myUsername,
+                            fromNick = myNick,
+                            fromHandle = myHandle,
                             toUid = targetUid,
                             status = "pending",
                             createdAt = System.currentTimeMillis()
@@ -66,6 +72,7 @@ class AddFriendFragment : Fragment(R.layout.fragment_add_friend) {
                         db.collection("friendRequests").add(request)
                             .addOnSuccessListener {
                                 Toast.makeText(requireContext(), "Pedido enviado!", Toast.LENGTH_SHORT).show()
+                                input.text.clear()
                             }
                             .addOnFailureListener { e ->
                                 Toast.makeText(requireContext(), "Erro: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -77,4 +84,3 @@ class AddFriendFragment : Fragment(R.layout.fragment_add_friend) {
             }
     }
 }
-
