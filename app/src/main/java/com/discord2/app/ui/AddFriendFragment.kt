@@ -32,11 +32,11 @@ class AddFriendFragment : Fragment(R.layout.fragment_add_friend) {
                 Toast.makeText(requireContext(), "Digite o @handle do seu amigo", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            sendFriendRequest(targetHandle)
+            sendFriendRequest(targetHandle, input)
         }
     }
 
-    private fun sendFriendRequest(targetHandle: String) {
+    private fun sendFriendRequest(targetHandle: String, input: EditText) {
         val myUid = auth.currentUser?.uid ?: return
 
         db.collection("users")
