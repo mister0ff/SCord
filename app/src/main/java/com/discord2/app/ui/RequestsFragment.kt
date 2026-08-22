@@ -53,21 +53,20 @@ class RequestsFragment : Fragment(R.layout.fragment_list) {
         val myUid = auth.currentUser?.uid ?: return
         val now = System.currentTimeMillis()
 
-        // marca o pedido como aceito
         db.collection("friendRequests").document(request.id)
             .update("status", "accepted")
 
-        // adiciona amizade nos dois sentidos
         db.collection("friends").document(myUid).collection("list")
             .document(request.fromUid)
-            .set(Friend(uid = request.fromUid, username = request.fromUsername, since = now))
+            .set(Friend(uid = request.fromUid, handle = request.fromHandle, nick = request.fromNick, since = now))
 
         db.collection("users").document(myUid).get()
             .addOnSuccessListener { myDoc ->
-                val myUsername = myDoc.getString("username") ?: "Usuário"
+                val myNick = myDoc.getString("nick") ?: "Usuário"
+                val myHandle = myDoc.getString("handle") ?: ""
                 db.collection("friends").document(request.fromUid).collection("list")
                     .document(myUid)
-                    .set(Friend(uid = myUid, username = myUsername, since = now))
+                    .set(Friend(uid = myUid, handle = myHandle, nick = myNick, since = now))
             }
 
         Toast.makeText(requireContext(), "Pedido aceito!", Toast.LENGTH_SHORT).show()
