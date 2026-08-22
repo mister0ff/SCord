@@ -28,7 +28,7 @@ class RequestsAdapter(
 
     override fun onBindViewHolder(holder: RequestViewHolder, position: Int) {
         val request = requests[position]
-        holder.nameText.text = request.fromUsername
+        holder.nameText.text = "${request.fromNick} (@${request.fromHandle})"
         holder.acceptButton.setOnClickListener { onAccept(request) }
         holder.rejectButton.setOnClickListener { onReject(request) }
     }
