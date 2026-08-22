@@ -26,7 +26,7 @@ class FriendsAdapter(
 
     override fun onBindViewHolder(holder: FriendViewHolder, position: Int) {
         val friend = friends[position]
-        holder.nameText.text = friend.username
+        holder.nameText.text = "${friend.nick} (@${friend.handle})"
         holder.actionButton.setOnClickListener { onChatClick(friend) }
     }
 
