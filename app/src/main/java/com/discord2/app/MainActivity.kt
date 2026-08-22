@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.discord2.app.ui.AddFriendFragment
 import com.discord2.app.ui.FriendsFragment
+import com.discord2.app.ui.ProfileFragment
 import com.discord2.app.ui.RequestsFragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
@@ -32,6 +33,10 @@ class MainActivity : AppCompatActivity() {
                 }
                 R.id.nav_add -> {
                     openFragment(AddFriendFragment())
+                    true
+                }
+                R.id.nav_profile -> {
+                    openFragment(ProfileFragment())
                     true
                 }
                 else -> false
