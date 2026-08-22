@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "166227286926",
+    "project_id": "starcord-ee336",
+    "storage_bucket": "starcord-ee336.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:166227286926:android:f0a6fbdc506ffc31f0e2df",
+        "android_client_info": {
+          "package_name": "com.discord2.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDYM0GgbvSB2qt020dsGmi0y-Iv2vXWmFE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
