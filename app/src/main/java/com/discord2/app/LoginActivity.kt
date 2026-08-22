@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.discord2.app.models.User
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlin.random.Random
 
 class LoginActivity : AppCompatActivity() {
 
@@ -25,11 +26,13 @@ class LoginActivity : AppCompatActivity() {
         auth = FirebaseAuth.getInstance()
         db = FirebaseFirestore.getInstance()
 
-        val usernameInput = findViewById<EditText>(R.id.usernameInput)
+        val nickInput = findViewById<EditText>(R.id.usernameInput)
         val emailInput = findViewById<EditText>(R.id.emailInput)
         val passwordInput = findViewById<EditText>(R.id.passwordInput)
         val actionButton = findViewById<Button>(R.id.actionButton)
         val toggleModeText = findViewById<TextView>(R.id.toggleModeText)
+
+        nickInput.hint = "Nick (nome de exibição)"
 
         // já logado? pula direto pro app
         if (auth.currentUser != null) {
@@ -40,11 +43,11 @@ class LoginActivity : AppCompatActivity() {
         toggleModeText.setOnClickListener {
             isRegisterMode = !isRegisterMode
             if (isRegisterMode) {
-                usernameInput.visibility = View.VISIBLE
+                nickInput.visibility = View.VISIBLE
                 actionButton.text = "CADASTRAR"
                 toggleModeText.text = "Já tem conta? Entrar"
             } else {
-                usernameInput.visibility = View.GONE
+                nickInput.visibility = View.GONE
                 actionButton.text = "ENTRAR"
                 toggleModeText.text = "Não tem conta? Cadastre-se"
             }
@@ -60,37 +63,69 @@ class LoginActivity : AppCompatActivity() {
             }
 
             if (isRegisterMode) {
-                val username = usernameInput.text.toString().trim()
-                if (username.isEmpty()) {
-                    Toast.makeText(this, "Escolha um nome de usuário", Toast.LENGTH_SHORT).show()
+                val nick = nickInput.text.toString().trim()
+                if (nick.isEmpty()) {
+                    Toast.makeText(this, "Escolha um nick", Toast.LENGTH_SHORT).show()
                     return@setOnClickListener
                 }
-                registerUser(username, email, password)
+                actionButton.isEnabled = false
+                registerUser(nick, email, password, actionButton)
             } else {
                 loginUser(email, password)
             }
         }
     }
 
-    private fun registerUser(username: String, email: String, password: String) {
+    private fun registerUser(nick: String, email: String, password: String, actionButton: Button) {
         auth.createUserWithEmailAndPassword(email, password)
             .addOnSuccessListener { result ->
                 val uid = result.user?.uid ?: return@addOnSuccessListener
-                val user = User(
-                    uid = uid,
-                    username = username,
-                    usernameLower = username.lowercase(),
-                    email = email
-                )
-                db.collection("users").document(uid).set(user)
-                    .addOnSuccessListener { goToMain() }
-                    .addOnFailureListener { e ->
-                        Toast.makeText(this, "Erro ao salvar perfil: ${e.message}", Toast.LENGTH_SHORT).show()
-                    }
+                reserveUniqueHandle(uid) { handle ->
+                    val user = User(uid = uid, handle = handle, nick = nick, email = email)
+                    db.collection("users").document(uid).set(user)
+                        .addOnSuccessListener { goToMain() }
+                        .addOnFailureListener { e ->
+                            actionButton.isEnabled = true
+                            Toast.makeText(this, "Erro ao salvar perfil: ${e.message}", Toast.LENGTH_SHORT).show()
+                        }
+                }
             }
             .addOnFailureListener { e ->
+                actionButton.isEnabled = true
                 Toast.makeText(this, "Erro ao cadastrar: ${e.message}", Toast.LENGTH_SHORT).show()
             }
+    }
+
+    /**
+     * Gera um handle único no formato "user1234" (fixo, usado pra adicionar amigos).
+     * Reserva o handle na coleção "handles" usando uma transação, pra evitar
+     * dois usuários acabarem com o mesmo handle ao mesmo tempo.
+     */
+    private fun reserveUniqueHandle(uid: String, attempt: Int = 0, onSuccess: (String) -> Unit) {
+        if (attempt >= 15) {
+            // no caso extremamente raro de 15 tentativas falharem, usa um número maior
+            val handle = "user" + Random.nextInt(100000, 999999)
+            db.collection("handles").document(handle).set(mapOf("uid" to uid))
+                .addOnSuccessListener { onSuccess(handle) }
+            return
+        }
+
+        val number = Random.nextInt(1000, 9999)
+        val handle = "user$number"
+        val handleRef = db.collection("handles").document(handle)
+
+        db.runTransaction { transaction ->
+            val snapshot = transaction.get(handleRef)
+            if (snapshot.exists()) {
+                throw Exception("HANDLE_TAKEN")
+            }
+            transaction.set(handleRef, mapOf("uid" to uid))
+            handle
+        }.addOnSuccessListener {
+            onSuccess(handle)
+        }.addOnFailureListener {
+            reserveUniqueHandle(uid, attempt + 1, onSuccess)
+        }
     }
 
     private fun loginUser(email: String, password: String) {
