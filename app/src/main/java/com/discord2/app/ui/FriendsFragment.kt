@@ -32,7 +32,7 @@ class FriendsFragment : Fragment(R.layout.fragment_list) {
         adapter = FriendsAdapter(mutableListOf()) { friend ->
             val intent = Intent(requireContext(), ChatActivity::class.java)
             intent.putExtra("friendUid", friend.uid)
-            intent.putExtra("friendUsername", friend.username)
+            intent.putExtra("friendUsername", friend.nick)
             startActivity(intent)
         }
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
